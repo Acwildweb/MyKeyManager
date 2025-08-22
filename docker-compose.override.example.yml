@@ -1,0 +1,56 @@
+# ================================================
+# Docker Compose Override per Porte Personalizzate
+# ================================================
+# Questo file permette di sovrascrivere le porte default
+# senza modificare il docker-compose.hub.yml principale
+#
+# Utilizzo:
+# 1. Rinomina questo file in: docker-compose.override.yml
+# 2. Modifica le porte secondo le tue necessità
+# 3. Esegui: docker-compose -f docker-compose.hub.yml up -d
+#
+# Docker Compose automaticamente userà anche l'override
+# ================================================
+
+version: '3.8'
+
+services:
+  frontend:
+    ports:
+      - "8080:80"  # Cambia 8080 con la porta che preferisci per il frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8001  # Aggiorna con la porta backend
+
+  backend:
+    ports:
+      - "8001:8000"  # Cambia 8001 con la porta che preferisci per il backend
+
+  db:
+    ports:
+      - "5433:5432"  # Cambia 5433 con la porta che preferisci per PostgreSQL
+
+  redis:
+    ports:
+      - "6380:6379"  # Cambia 6380 con la porta che preferisci per Redis
+
+# ================================================
+# Esempi di Configurazioni Comuni
+# ================================================
+
+# Configurazione Docker Desktop (porte alternative)
+# frontend: 8080:80
+# backend: 8001:8000
+# db: 5433:5432
+# redis: 6380:6379
+
+# Configurazione Server (porte non privilegiate)
+# frontend: 8080:80
+# backend: 8000:8000
+# db: 15432:5432
+# redis: 16379:6379
+
+# Configurazione Sviluppo Multi-Istanza
+# frontend: 9080:80
+# backend: 9000:8000
+# db: 9432:5432
+# redis: 9379:6379

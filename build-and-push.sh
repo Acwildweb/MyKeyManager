@@ -17,7 +17,7 @@
 set -e  # Exit on any error
 
 # Configurazione
-DOCKER_USERNAME="Acwildweb"  # Cambia con il tuo username Docker Hub
+DOCKER_USERNAME="acwild"  # Username Docker Hub corretto
 PROJECT_NAME="mykeymanager"
 VERSION=${1:-"latest"}
 
@@ -48,7 +48,7 @@ error() {
 
 # Banner
 echo "================================================"
-echo "🐳 MyKeyManager Docker Hub Publisher v1.1.0"
+echo "🐳 MyKeyManager Docker Hub Publisher v1.1.1"
 echo "================================================"
 echo ""
 
@@ -98,6 +98,16 @@ docker build \
 
 success "Immagine Frontend costruita"
 
+# Build All-in-One (New in v1.1.1)
+log "📦 Costruendo immagine All-in-One..."
+docker build \
+    -f Dockerfile.all-in-one \
+    -t ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:${VERSION} \
+    -t ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:latest \
+    .
+
+success "Immagine All-in-One costruita"
+
 # Verifica immagini create
 log "📋 Verificando immagini create..."
 docker images | grep ${DOCKER_USERNAME}/${PROJECT_NAME}
@@ -116,6 +126,13 @@ docker push ${DOCKER_USERNAME}/${PROJECT_NAME}-frontend:latest
 
 success "Immagine Frontend caricata su Docker Hub"
 
+# Push All-in-One
+log "📤 Caricando immagine All-in-One su Docker Hub..."
+docker push ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:${VERSION}
+docker push ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:latest
+
+success "Immagine All-in-One caricata su Docker Hub"
+
 # Cleanup locale (opzionale)
 read -p "Vuoi rimuovere le immagini locali per liberare spazio? (y/N): " -n 1 -r
 echo
@@ -123,6 +140,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     log "🧹 Rimuovendo immagini locali..."
     docker rmi ${DOCKER_USERNAME}/${PROJECT_NAME}-backend:${VERSION} || true
     docker rmi ${DOCKER_USERNAME}/${PROJECT_NAME}-frontend:${VERSION} || true
+    docker rmi ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:${VERSION} || true
     success "Immagini locali rimosse"
 fi
 
@@ -137,16 +155,20 @@ echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-backend:${VERSION}"
 echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-backend:latest"
 echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-frontend:${VERSION}"
 echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-frontend:latest"
+echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:${VERSION}"
+echo "   • ${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one:latest"
 echo ""
 echo "🚀 Per utilizzare le immagini:"
-echo "   docker-compose -f docker-compose.hub.yml up -d"
+echo "   Microservizi: docker-compose -f docker-compose.hub.yml up -d"
+echo "   All-in-One:   ./configure-all-in-one.sh"
 echo ""
 echo "🌐 Link Docker Hub:"
 echo "   https://hub.docker.com/r/${DOCKER_USERNAME}/${PROJECT_NAME}-backend"
 echo "   https://hub.docker.com/r/${DOCKER_USERNAME}/${PROJECT_NAME}-frontend"
+echo "   https://hub.docker.com/r/${DOCKER_USERNAME}/${PROJECT_NAME}-all-in-one"
 echo ""
 echo "📚 Documentazione completa:"
-echo "   https://github.com/${DOCKER_USERNAME}/MyKeyManager"
+echo "   https://github.com/Acwildweb/MyKeyManager"
 echo ""
 
 success "Script completato con successo!"

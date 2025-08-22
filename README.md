@@ -1,14 +1,15 @@
-# 🔑 MyKeyManager v1.1.0
+# 🔑 MyKeyManager v1.1.1
 
 > **Sistema avanzato di gestione licenze software single-user**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](devops/docker-compose.yml)
-[![Version](https://img.shields.io/badge/version-1.1.0-green.svg)](frontend/src/config/version.ts)
+[![Version](https://img.shields.io/badge/version-1.1.1-green.svg)](frontend/src/config/version.ts)
+[![All-in-One](https://img.shields.io/badge/deploy-all--in--one-orange.svg)](ALL_IN_ONE_GUIDE.md)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-green.svg)](backend/pyproject.toml)
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](frontend/package.json)
 
-Sistema completo di gestione licenze software con dashboard amministrativo moderno, sistema di branding personalizzabile e containerizzazione Docker integrata.
+Sistema completo di gestione licenze software con dashboard amministrativo moderno, sistema di branding personalizzabile, **container All-in-One per deploy semplificato** e **gestione intelligente delle porte** con containerizzazione Docker integrata.
 
 ---
 
@@ -37,8 +38,11 @@ Sistema completo di gestione licenze software con dashboard amministrativo moder
 - **Interfaccia responsive** moderna
 
 ### 🐳 Containerizzazione Completa
-- **Docker Compose** setup con un comando
+- **3 modalità di deployment**: All-in-One, Microservizi Docker Hub, Build locale
+- **Container All-in-One** per setup in 30 secondi
+- **Sistema intelligente gestione porte** con auto-detection conflitti
 - **Container separati**: Backend FastAPI, Frontend React, PostgreSQL, Redis, SMTP
+- **Immagini Docker Hub** precompilate per deploy istantaneo
 - **Volumes persistenti** per database
 - **Hot-reload** in development
 - **Build ottimizzato** per produzione
@@ -50,31 +54,110 @@ Sistema completo di gestione licenze software con dashboard amministrativo moder
 - **Docker** >= 20.10
 - **Docker Compose** >= 2.0
 - **4GB RAM** raccomandati
-- **Porte**: 8000 (Backend), 5173 (Frontend), 5432 (PostgreSQL), 6379 (Redis)
+- **Porte flessibili**: Sistema intelligente di gestione porte (vedere [Configurazione Porte Avanzata](ADVANCED_PORT_CONFIG.md))
 
 ---
 
 ## ⚡ Installazione Rapida
 
-### 1. Clone del Repository
+### 🎯 Docker Hub All-in-One (Più Veloce)
 ```bash
-git clone https://github.com/[username]/MyKeyManager.git
-cd MyKeyManager
+# 1. Download configurazione (solo la prima volta)
+curl -o docker-compose.hub-all-in-one.yml https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/docker-compose.hub-all-in-one.yml
+
+# 2. Configurazione automatica porta
+echo "MYKEYMANAGER_PORT=8080" > .env.all-in-one
+
+# 3. Deploy istantaneo con immagine Docker Hub
+docker-compose -f docker-compose.hub-all-in-one.yml --env-file .env.all-in-one up -d
+
+# 4. Accesso immediato - tutto incluso in un container
+# Frontend: http://localhost:8080
 ```
 
-### 2. Avvio con Docker Compose
+### 📦 All-in-One Container (Raccomandato per Demo/Test)
 ```bash
-# Avvio completo con build automatico
+# 1. Clone del repository
+git clone https://github.com/Acwildweb/MyKeyManager.git
+cd MyKeyManager
+
+# 2. Setup automatico container unico con tutti i servizi
+./configure-all-in-one.sh
+
+# 3. Accesso immediato
+# Frontend: http://localhost (porta auto-configurata)
+# Tutto incluso: Frontend + Backend + DB + Redis + SMTP
+```
+
+### 🎯 Docker Hub (Raccomandato per Produzione)
+```bash
+# 1. Clone del repository per configurazioni
+git clone https://github.com/Acwildweb/MyKeyManager.git
+cd MyKeyManager
+
+# 2. Configurazione automatica porte intelligente
+./configure-ports.sh
+
+# 3. Avvio con immagini Docker Hub precompilate
+docker-compose -f docker-compose.hub.yml up -d
+
+# 4. Accesso applicazione (URLs mostrati dal configure-ports.sh --info)
+```
+
+### 🛠️ Build Locale (Sviluppo)
+```bash
+# 1. Clone del repository
+git clone https://github.com/Acwildweb/MyKeyManager.git
+cd MyKeyManager
+
+# 2. Avvio completo con build automatico
 docker compose -f devops/docker-compose.yml up --build
 
-# Oppure in background
-docker compose -f devops/docker-compose.yml up --build -d
+# 3. Accesso all'applicazione
+# Frontend: http://localhost:5173 
+# Backend API: http://localhost:8000/docs
 ```
 
-### 3. Accesso all'Applicazione
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000/docs (Swagger UI)
-- **Credenziali default**: `admin` / `ChangeMe!123` ⚠️ **Cambiare immediatamente!**
+### 🔑 Credenziali Default
+- **Username**: `admin`
+- **Password**: `ChangeMe!123` 
+- ⚠️ **Cambiare immediatamente dopo il primo accesso!**
+
+### 🚀 Opzioni di Deployment
+
+#### 🎯 Docker Hub All-in-One (Velocità Massima)
+- **Immagine precompilata** su Docker Hub - deploy in 10 secondi
+- **Un solo container** con tutto integrato
+- **Zero build time** - download e avvio immediato
+- **Ideale per**: Test rapidi, demo istantanee, workshop
+
+#### 📦 All-in-One Build Locale (Massima Semplicità)
+- **Un solo container** con tutti i servizi
+- **Setup in 30 secondi** con configurazione automatica
+- **Ideale per**: Demo, test, sviluppo locale, risorse limitate
+- **Test rapido**: `./test-all-in-one.sh` per verificare compatibilità
+- **Guida completa**: [ALL_IN_ONE_GUIDE.md](ALL_IN_ONE_GUIDE.md)
+
+#### 🎯 Microservizi (Raccomandato per Produzione)
+- **Container separati** per ogni servizio
+- **Scalabilità ottimale** e fault tolerance
+- **Ideale per**: Produzione, team development, high availability
+
+### 🔧 Gestione Porte Avanzata
+Il sistema include un **configuratore intelligente** simile a Docker Desktop:
+
+```bash
+# Configurazione automatica (rileva conflitti e suggerisce alternative)
+./configure-ports.sh
+
+# Verifica porte disponibili  
+./configure-ports.sh --check
+
+# Mostra configurazione attuale
+./configure-ports.sh --info
+```
+
+📚 **Documentazione completa**: [ADVANCED_PORT_CONFIG.md](ADVANCED_PORT_CONFIG.md)
 
 ---
 
@@ -138,35 +221,53 @@ MyKeyManager/
 
 ### Variabili di Ambiente
 
-Crea un file `.env` nella root del progetto:
+Crea un file `.env` nella root del progetto o usa il configuratore automatico:
 
+```bash
+# Configurazione automatica con script intelligente
+./configure-ports.sh --configure
+
+# Oppure manuale: copia template e modifica
+cp env.template .env
+```
+
+**File .env di esempio:**
 ```env
-# Database
+# =================== PORTE CONFIGURABILI ===================
+# Il sistema rileva automaticamente conflitti e suggerisce alternative
+FRONTEND_PORT=8080        # Default: 80, Alternative: 8080, 3000, 4000
+BACKEND_PORT=8001         # Default: 8000, Alternative: 8001, 8080, 9000  
+POSTGRES_PORT=5432        # Default: 5432, Alternative: 5433, 15432
+REDIS_PORT=6379           # Default: 6379, Alternative: 6380, 16379
+
+# =================== DATABASE ===================
 DATABASE_URL=postgresql://user:password@postgres:5432/mykeymanager
 POSTGRES_USER=mykeymanager_user
 POSTGRES_PASSWORD=secure_password_here
 POSTGRES_DB=mykeymanager
 
-# Security
+# =================== SECURITY ===================
 SECRET_KEY=your-super-secret-key-change-this
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# Email Configuration
+# =================== EMAIL CONFIGURATION ===================
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 EMAIL_FROM=noreply@yourdomain.com
 
-# Redis
+# =================== REDIS ===================
 REDIS_URL=redis://redis:6379/0
 
-# Application
+# =================== APPLICATION ===================
 DEBUG=false
 ALLOWED_HOSTS=localhost,127.0.0.1
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CORS_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
 ```
+
+📚 **Documentazione porte avanzata**: [ADVANCED_PORT_CONFIG.md](ADVANCED_PORT_CONFIG.md)
 
 ### Personalizzazione Branding
 
@@ -321,12 +422,18 @@ docker compose -f devops/docker-compose.yml up --build
 
 ## 📝 Changelog
 
-### v1.1.0 (2025-01-22) - Current
-- ✅ **Sistema di gestione icone FontAwesome** completo
+### v1.1.1 (2025-08-22) - Current
+- ✅ **Container All-in-One** con deploy semplificato e immagine Docker Hub precompilata
+- ✅ **Sistema intelligente gestione porte** simile a Docker Desktop con auto-detection conflitti
+- ✅ **3 modalità deployment flessibili**: All-in-One, Docker Hub microservizi, Build locale
+- ✅ **Script configurazione automatica** per setup one-click con rilevamento conflitti
+- ✅ **Docker Hub publication** completa con immagini ottimizzate (acwild/mykeymanager-*)
+- ✅ **Sistema di gestione icone FontAwesome** completo con pannello amministrativo
 - ✅ **Favicon dinamico** configurabile dal pannello admin
 - ✅ **Integrazione FontAwesome CDN** per performance ottimali
 - ✅ **Miglioramenti interfaccia utente** e usabilità
 - ✅ **Sistema di branding** completamente personalizzabile
+- ✅ **Configuratore automatico** per deployment flessibile
 
 ### v1.0.0 (2025-08-22) - Release Iniziale
 - ✅ Sistema completo gestione licenze software

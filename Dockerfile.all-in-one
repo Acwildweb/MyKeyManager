@@ -1,0 +1,431 @@
+# =========================================================================
+# MyKeyManager All-in-One Container
+# Includes: Frontend (Nginx) + Backend (FastAPI) + PostgreSQL + Redis + SMTP
+# =========================================================================
+
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during build
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Rome
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV NODE_ENV=production
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    # Python and build tools
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    python3.11-venv \
+    # Node.js and npm
+    curl \
+    # PostgreSQL
+    postgresql \
+    postgresql-contrib \
+    # Redis
+    redis-server \
+    # Nginx
+    nginx \
+    # SMTP (Postfix)
+    postfix \
+    # Utilities
+    supervisor \
+    cron \
+    vim \
+    wget \
+    unzip \
+    # Cleanup
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18.x
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Create application user
+RUN useradd -m -s /bin/bash mykeymanager \
+    && usermod -aG sudo mykeymanager
+
+# Create application directories
+RUN mkdir -p /app/backend /app/frontend /app/data /app/logs /app/scripts
+WORKDIR /app
+
+# =========================================================================
+# POSTGRESQL SETUP
+# =========================================================================
+
+# Configure PostgreSQL
+USER postgres
+
+# Initialize PostgreSQL database
+RUN service postgresql start && \
+    createdb mykeymanager && \
+    psql -c "CREATE USER mykeymanager_user WITH PASSWORD 'secure_password_here';" && \
+    psql -c "GRANT ALL PRIVILEGES ON DATABASE mykeymanager TO mykeymanager_user;" && \
+    psql -c "ALTER USER mykeymanager_user CREATEDB;"
+
+# Configure PostgreSQL
+RUN echo "host all all 127.0.0.1/32 md5" >> /etc/postgresql/14/main/pg_hba.conf
+RUN echo "listen_addresses = 'localhost'" >> /etc/postgresql/14/main/postgresql.conf
+
+USER root
+
+# =========================================================================
+# REDIS SETUP  
+# =========================================================================
+
+# Configure Redis
+RUN sed -i 's/^daemonize no/daemonize yes/' /etc/redis/redis.conf
+RUN sed -i 's/^bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
+
+# =========================================================================
+# BACKEND SETUP
+# =========================================================================
+
+# Copy backend requirements and install dependencies
+COPY backend/pyproject.toml /app/backend/
+WORKDIR /app/backend
+
+# Install Python dependencies
+RUN pip3 install --upgrade pip setuptools wheel
+RUN pip3 install poetry
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-dev --no-interaction --no-ansi
+
+# Copy backend application
+COPY backend/app /app/backend/app
+COPY backend/migrate_smtp.py /app/backend/
+
+# =========================================================================
+# FRONTEND SETUP
+# =========================================================================
+
+WORKDIR /app/frontend
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+COPY frontend/tsconfig.json ./
+COPY frontend/vite.config.ts ./
+COPY frontend/vite-env.d.ts ./
+
+# Install frontend dependencies
+RUN npm ci --only=production
+
+# Copy frontend source
+COPY frontend/src ./src
+COPY frontend/public ./public
+COPY frontend/index.html ./
+
+# Build frontend
+RUN npm run build
+
+# =========================================================================
+# NGINX SETUP
+# =========================================================================
+
+# Configure Nginx
+COPY <<EOF /etc/nginx/sites-available/mykeymanager
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    
+    root /app/frontend/dist;
+    index index.html;
+    
+    server_name _;
+    
+    # Frontend routes
+    location / {
+        try_files \$uri \$uri/ /index.html;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+    
+    # Backend API proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # CORS headers
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization" always;
+        
+        if (\$request_method = 'OPTIONS') {
+            add_header Access-Control-Allow-Origin "*";
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization";
+            add_header Access-Control-Max-Age 1728000;
+            add_header Content-Type "text/plain; charset=utf-8";
+            add_header Content-Length 0;
+            return 204;
+        }
+    }
+    
+    # Docs
+    location /docs {
+        proxy_pass http://127.0.0.1:8000/docs;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+    
+    location /redoc {
+        proxy_pass http://127.0.0.1:8000/redoc;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+    
+    # Health check
+    location /health {
+        proxy_pass http://127.0.0.1:8000/health;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+    }
+    
+    # Static files caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+EOF
+
+# Enable site and remove default
+RUN ln -sf /etc/nginx/sites-available/mykeymanager /etc/nginx/sites-enabled/
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# =========================================================================
+# POSTFIX SMTP SETUP
+# =========================================================================
+
+# Configure Postfix for local mail delivery
+RUN echo "mykeymanager" > /etc/mailname
+RUN postconf -e 'inet_interfaces = loopback-only'
+RUN postconf -e 'mydestination = localhost'
+RUN postconf -e 'relayhost ='
+RUN postconf -e 'mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128'
+
+# =========================================================================
+# SUPERVISOR CONFIGURATION
+# =========================================================================
+
+# Create supervisor configuration
+COPY <<EOF /etc/supervisor/conf.d/mykeymanager.conf
+[supervisord]
+nodaemon=true
+user=root
+logfile=/app/logs/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:postgresql]
+command=/usr/lib/postgresql/14/bin/postgres -D /var/lib/postgresql/14/main -c config_file=/etc/postgresql/14/main/postgresql.conf
+user=postgres
+autostart=true
+autorestart=true
+stderr_logfile=/app/logs/postgresql.err.log
+stdout_logfile=/app/logs/postgresql.out.log
+environment=PATH="/usr/lib/postgresql/14/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+[program:redis]
+command=redis-server /etc/redis/redis.conf
+user=redis
+autostart=true
+autorestart=true
+stderr_logfile=/app/logs/redis.err.log
+stdout_logfile=/app/logs/redis.out.log
+
+[program:backend]
+command=python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+directory=/app/backend
+user=mykeymanager
+autostart=true
+autorestart=true
+stderr_logfile=/app/logs/backend.err.log
+stdout_logfile=/app/logs/backend.out.log
+environment=DATABASE_URL="postgresql://mykeymanager_user:secure_password_here@localhost:5432/mykeymanager",REDIS_URL="redis://localhost:6379/0",SECRET_KEY="your-super-secret-key-change-this-in-production",ALGORITHM="HS256",ACCESS_TOKEN_EXPIRE_MINUTES="30"
+
+[program:nginx]
+command=/usr/sbin/nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stderr_logfile=/app/logs/nginx.err.log
+stdout_logfile=/app/logs/nginx.out.log
+
+[program:postfix]
+command=/usr/sbin/postfix start-fg
+autostart=true
+autorestart=true
+stderr_logfile=/app/logs/postfix.err.log
+stdout_logfile=/app/logs/postfix.out.log
+EOF
+
+# =========================================================================
+# STARTUP SCRIPTS
+# =========================================================================
+
+# Create initialization script
+COPY <<EOF /app/scripts/init.sh
+#!/bin/bash
+set -e
+
+echo "🚀 Starting MyKeyManager All-in-One Container..."
+
+# Create log directory
+mkdir -p /app/logs
+
+# Initialize PostgreSQL if needed
+if [ ! -f /var/lib/postgresql/14/main/PG_VERSION ]; then
+    echo "📦 Initializing PostgreSQL..."
+    sudo -u postgres /usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/14/main
+fi
+
+# Start PostgreSQL temporarily to run migrations
+echo "🔄 Starting PostgreSQL for migrations..."
+sudo -u postgres /usr/lib/postgresql/14/bin/pg_ctl -D /var/lib/postgresql/14/main -l /app/logs/postgresql.log start
+
+# Wait for PostgreSQL to be ready
+sleep 5
+
+# Run database migrations
+echo "🔄 Running database migrations..."
+cd /app/backend
+python3 migrate_smtp.py || echo "Migration already applied or not needed"
+
+# Stop PostgreSQL (supervisor will start it)
+sudo -u postgres /usr/lib/postgresql/14/bin/pg_ctl -D /var/lib/postgresql/14/main stop
+
+echo "✅ Initialization complete!"
+echo "🌟 Starting all services with supervisor..."
+
+# Start supervisor
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/mykeymanager.conf
+EOF
+
+# Create health check script
+COPY <<EOF /app/scripts/health.sh
+#!/bin/bash
+
+# Health check script
+echo "🔍 MyKeyManager Health Check"
+echo "=========================="
+
+# Check PostgreSQL
+if sudo -u postgres pg_isready -q; then
+    echo "✅ PostgreSQL: Running"
+else
+    echo "❌ PostgreSQL: Down"
+    exit 1
+fi
+
+# Check Redis
+if redis-cli ping > /dev/null 2>&1; then
+    echo "✅ Redis: Running"
+else
+    echo "❌ Redis: Down"
+    exit 1
+fi
+
+# Check Backend
+if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    echo "✅ Backend API: Running"
+else
+    echo "❌ Backend API: Down"
+    exit 1
+fi
+
+# Check Nginx
+if curl -sf http://localhost:80 > /dev/null 2>&1; then
+    echo "✅ Frontend (Nginx): Running"
+else
+    echo "❌ Frontend (Nginx): Down"
+    exit 1
+fi
+
+echo "🎉 All services are healthy!"
+EOF
+
+# Make scripts executable
+RUN chmod +x /app/scripts/*.sh
+
+# =========================================================================
+# ENVIRONMENT CONFIGURATION
+# =========================================================================
+
+# Create environment configuration script
+COPY <<EOF /app/scripts/configure-env.sh
+#!/bin/bash
+
+# Environment configuration
+export DATABASE_URL="\${DATABASE_URL:-postgresql://mykeymanager_user:secure_password_here@localhost:5432/mykeymanager}"
+export REDIS_URL="\${REDIS_URL:-redis://localhost:6379/0}"
+export SECRET_KEY="\${SECRET_KEY:-your-super-secret-key-change-this-in-production}"
+export ALGORITHM="\${ALGORITHM:-HS256}"
+export ACCESS_TOKEN_EXPIRE_MINUTES="\${ACCESS_TOKEN_EXPIRE_MINUTES:-30}"
+
+# SMTP Configuration
+export SMTP_HOST="\${SMTP_HOST:-localhost}"
+export SMTP_PORT="\${SMTP_PORT:-25}"
+export SMTP_USER="\${SMTP_USER:-}"
+export SMTP_PASSWORD="\${SMTP_PASSWORD:-}"
+export EMAIL_FROM="\${EMAIL_FROM:-noreply@localhost}"
+
+# Application Configuration  
+export DEBUG="\${DEBUG:-false}"
+export ALLOWED_HOSTS="\${ALLOWED_HOSTS:-localhost,127.0.0.1}"
+export CORS_ORIGINS="\${CORS_ORIGINS:-http://localhost,http://127.0.0.1}"
+
+echo "🔧 Environment configured"
+echo "📍 Frontend: http://localhost (port 80)"
+echo "📍 Backend API: http://localhost/api (proxied)"
+echo "📍 API Docs: http://localhost/docs"
+echo "📍 Database: PostgreSQL on localhost:5432"
+echo "📍 Cache: Redis on localhost:6379"
+echo "📍 SMTP: Postfix on localhost:25"
+EOF
+
+RUN chmod +x /app/scripts/configure-env.sh
+
+# =========================================================================
+# FINAL SETUP
+# =========================================================================
+
+# Set proper permissions
+RUN chown -R mykeymanager:mykeymanager /app
+RUN chown -R postgres:postgres /var/lib/postgresql
+
+# Expose port
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /app/scripts/health.sh
+
+# Set working directory
+WORKDIR /app
+
+# Default command
+CMD ["/app/scripts/init.sh"]
+
+# =========================================================================
+# LABELS
+# =========================================================================
+
+LABEL maintainer="A.c. wild s.a.s <info@acwild.it>"
+LABEL version="1.1.0"
+LABEL description="MyKeyManager All-in-One: Frontend + Backend + PostgreSQL + Redis + SMTP"
+LABEL org.opencontainers.image.title="MyKeyManager All-in-One"
+LABEL org.opencontainers.image.description="Complete license management system in a single container"
+LABEL org.opencontainers.image.url="https://github.com/Acwildweb/MyKeyManager"
+LABEL org.opencontainers.image.vendor="A.c. wild s.a.s"
+LABEL org.opencontainers.image.version="1.1.0"

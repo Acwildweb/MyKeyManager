@@ -5,26 +5,26 @@ services:
   # 🌐 FRONTEND - React + Nginx
   # ==========================================
   frontend:
-    image: acwildweb/mykeymanager-frontend:v1.1.0
+    image: acwild/mykeymanager-frontend:v1.1.0
     container_name: mykeymanager-frontend
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
     networks:
       - mknet
     restart: unless-stopped
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://localhost:${BACKEND_PORT:-8000}
 
   # ==========================================
   # 🚀 BACKEND - FastAPI + Python
   # ==========================================
   backend:
-    image: acwildweb/mykeymanager-backend:v1.1.0
+    image: acwild/mykeymanager-backend:v1.1.0
     container_name: mykeymanager-backend
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       - db
       - redis
@@ -83,7 +83,7 @@ services:
       - mknet
     restart: unless-stopped
     ports:
-      - "5432:5432"  # Optional: rimuovi in produzione
+      - "${POSTGRES_PORT:-5432}:5432"  # Configurable PostgreSQL port
 
   # ==========================================
   # 🔄 CACHE - Redis
@@ -98,7 +98,7 @@ services:
       - mknet
     restart: unless-stopped
     ports:
-      - "6379:6379"  # Optional: rimuovi in produzione
+      - "${REDIS_PORT:-6379}:6379"  # Configurable Redis port
 
   # ==========================================
   # 📧 SMTP Server (Optional)
