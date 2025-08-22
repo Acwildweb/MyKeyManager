@@ -2,6 +2,26 @@
 
 > **Installazione completa per interfacce grafiche Docker (Portainer, Docker Desktop, etc.)**
 
+## 🚀 Installazione Rapida (AGGIORNATO v1.1.3)
+
+### Opzione A: Version Stabile HOTFIX ⚡ (Raccomandato)
+
+```bash
+# NUOVO: Versione corretta per massima compatibilità
+curl -O https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/docker-compose.fixed.yml
+docker compose -f docker-compose.fixed.yml up -d
+```
+
+### Opzione B: Versione Standard v1.1.2
+
+```bash
+# Versione originale (alcuni container manager potrebbero avere problemi di parsing)
+curl -O https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/docker-compose.container-manager.yml
+docker compose -f docker-compose.container-manager.yml up -d
+```
+
+---
+
 ## 🎯 Metodo 1: Stack Docker Compose (Raccomandato)
 
 ### **1. Copia questo Docker Compose**
