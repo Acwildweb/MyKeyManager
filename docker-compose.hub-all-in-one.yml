@@ -13,7 +13,7 @@ services:
     environment:
       POSTGRES_DB: mykeymanager
       POSTGRES_USER: mykeymanager
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMe!123}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMe123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -43,7 +43,7 @@ services:
 
   # Backend API
   backend:
-    image: acwild/mykeymanager-backend:v1.1.1
+    image: acwild/mykeymanager-backend:v1.1.2
     container_name: mykeymanager-backend
     depends_on:
       db:
@@ -51,7 +51,7 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://mykeymanager:${POSTGRES_PASSWORD:-ChangeMe!123}@db:5432/mykeymanager
+      DATABASE_URL: postgresql://mykeymanager:${POSTGRES_PASSWORD:-ChangeMe123}@db:5432/mykeymanager
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-this-in-production}
       CORS_ORIGINS: '["http://localhost:${FRONTEND_PORT:-3000}"]'

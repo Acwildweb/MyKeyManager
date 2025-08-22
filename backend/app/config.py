@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "db"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "mykeymanager"
-    POSTGRES_USER: str = "mykeyuser"
-    POSTGRES_PASSWORD: str = "mykeypass"
+    POSTGRES_USER: str = "mykeymanager"
+    POSTGRES_PASSWORD: str = "ChangeMe123"
     DATABASE_URL: str | None = None
     REDIS_URL: str = "redis://redis:6379/0"
     RATE_LIMIT: str = "100/hour"
