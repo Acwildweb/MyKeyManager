@@ -1,6 +1,6 @@
 # =========================================================================
 # MyKeyManager All-in-One Docker Compose
-# Ready for Docker Container Managers (Portainer, Docker Desktop, etc.)
+# FIXED VERSION - Ready for Container Managers
 # =========================================================================
 
 services:
@@ -24,9 +24,6 @@ services:
     restart: unless-stopped
     networks:
       - mykeymanager-network
-    labels:
-      - "com.mykeymanager.service=database"
-      - "com.mykeymanager.version=v1.1.2"
 
   # Redis Cache
   redis:
@@ -44,9 +41,6 @@ services:
     restart: unless-stopped
     networks:
       - mykeymanager-network
-    labels:
-      - "com.mykeymanager.service=cache"
-      - "com.mykeymanager.version=v1.1.2"
 
   # Backend API
   backend:
@@ -61,15 +55,9 @@ services:
       DATABASE_URL: postgresql://mykeymanager:SecurePass123@db:5432/mykeymanager
       REDIS_URL: redis://redis:6379
       SECRET_KEY: your-secret-key-change-in-production
-      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080
+      ALLOWED_ORIGINS: http://localhost:8080
       CORS_ORIGINS: '["http://localhost:8080"]'
       APP_VERSION: v1.1.2
-      # SMTP Configuration (Optional)
-      # SMTP_SERVER: smtp.gmail.com
-      # SMTP_PORT: 587
-      # SMTP_USER: your-email@gmail.com
-      # SMTP_PASS: your-app-password
-      # FROM_EMAIL: noreply@your-domain.com
     ports:
       - "8001:8000"
     healthcheck:
@@ -80,9 +68,6 @@ services:
     restart: unless-stopped
     networks:
       - mykeymanager-network
-    labels:
-      - "com.mykeymanager.service=backend"
-      - "com.mykeymanager.version=v1.1.2"
 
   # Frontend Web Interface
   frontend:
@@ -104,24 +89,13 @@ services:
     restart: unless-stopped
     networks:
       - mykeymanager-network
-    labels:
-      - "com.mykeymanager.service=frontend"
-      - "com.mykeymanager.version=v1.1.2"
 
 volumes:
   postgres_data:
-    driver: local
     name: mykeymanager_postgres_data
-    labels:
-      - "com.mykeymanager.volume=database"
   redis_data:
-    driver: local
     name: mykeymanager_redis_data
-    labels:
-      - "com.mykeymanager.volume=cache"
 
 networks:
   mykeymanager-network:
     driver: bridge
-    labels:
-      - "com.mykeymanager.network=main"
