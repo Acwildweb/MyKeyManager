@@ -1,0 +1,201 @@
+# =========================================================================
+# MyKeyManager All-in-One Container - Optimized Build
+# Includes: Frontend (Nginx) + Backend (FastAPI) + PostgreSQL + Redis + SMTP
+# =========================================================================
+
+# =========================================================================
+# FRONTEND BUILD STAGE
+# =========================================================================
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+COPY frontend/tsconfig.json ./
+COPY frontend/vite.config.ts ./
+COPY frontend/vite-env.d.ts ./
+RUN npm install
+COPY frontend/src ./src
+COPY frontend/public ./public
+COPY frontend/index.html ./
+RUN npm run build
+
+# =========================================================================
+# MAIN UBUNTU IMAGE
+# =========================================================================
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Rome
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV NODE_ENV=production
+
+# Install essential packages first (faster)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl wget sudo ca-certificates gnupg lsb-release \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python 3.11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 python3.11-dev python3-pip python3.11-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install services in separate layers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql postgresql-contrib \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    redis-server nginx supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postfix cron vim unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Install Node.js 18
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
+
+# Create user and directories
+RUN useradd -m -s /bin/bash mykeymanager && \
+    usermod -aG sudo mykeymanager && \
+    mkdir -p /app/backend /app/frontend /app/data /app/logs && \
+    chown -R mykeymanager:mykeymanager /app
+
+WORKDIR /app
+
+# Configure PostgreSQL
+RUN service postgresql start && \
+    sudo -u postgres createdb mykeymanager && \
+    sudo -u postgres psql mykeymanager -c "CREATE USER mykeymanager WITH PASSWORD 'ChangeMe!123';" && \
+    sudo -u postgres psql mykeymanager -c "GRANT ALL PRIVILEGES ON DATABASE mykeymanager TO mykeymanager;" && \
+    service postgresql stop
+
+# Install Python dependencies (cached layer)
+COPY backend/pyproject.toml /app/backend/
+WORKDIR /app/backend
+RUN pip install --no-cache-dir \
+    fastapi==0.104.1 uvicorn[standard]==0.24.0 sqlalchemy==2.0.23 \
+    psycopg2-binary==2.9.9 python-jose[cryptography]==3.3.0 \
+    passlib[bcrypt]==1.7.4 python-multipart==0.0.6 alembic==1.12.1 \
+    redis==5.0.1 python-dotenv==1.0.0 bcrypt==4.1.2 email-validator==2.1.0
+
+# Copy application files
+COPY backend/app ./app
+COPY backend/migrate_smtp.py ./
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+
+# Configure services
+RUN rm -f /etc/nginx/sites-enabled/default
+COPY <<'EOF' /etc/nginx/sites-available/mykeymanager
+server {
+    listen 3000;
+    location / {
+        root /app/frontend/dist;
+        try_files $uri $uri/ /index.html;
+    }
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location /health {
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+EOF
+RUN ln -s /etc/nginx/sites-available/mykeymanager /etc/nginx/sites-enabled/
+
+# Configure other services
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf && \
+    echo "host all all 127.0.0.1/32 md5" >> /etc/postgresql/14/main/pg_hba.conf && \
+    echo "listen_addresses = 'localhost'" >> /etc/postgresql/14/main/postgresql.conf
+
+# Create configuration files
+COPY <<'EOF' /app/.env
+DATABASE_URL=postgresql://mykeymanager:ChangeMe!123@localhost:5432/mykeymanager
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=your-secret-key-change-this-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+CORS_ORIGINS=["*"]
+APP_NAME=MyKeyManager
+APP_VERSION=1.1.1
+DEBUG=false
+EOF
+
+COPY <<'EOF' /etc/supervisor/conf.d/mykeymanager.conf
+[supervisord]
+nodaemon=true
+user=root
+
+[program:postgresql]
+command=/usr/lib/postgresql/14/bin/postgres -D /var/lib/postgresql/14/main -c config_file=/etc/postgresql/14/main/postgresql.conf
+user=postgres
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/postgresql.log
+
+[program:redis]
+command=/usr/bin/redis-server /etc/redis/redis.conf
+user=redis
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/redis.log
+
+[program:backend]
+command=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+directory=/app/backend
+user=mykeymanager
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/backend.log
+
+[program:nginx]
+command=/usr/sbin/nginx -g "daemon off;"
+autostart=true
+autorestart=true
+stdout_logfile=/app/logs/nginx.log
+EOF
+
+COPY <<'EOF' /app/start.sh
+#!/bin/bash
+set -e
+echo "=== MyKeyManager All-in-One Starting ==="
+mkdir -p /app/logs
+
+if [ ! -f /app/data/.db_initialized ]; then
+    echo "Initializing database..."
+    service postgresql start
+    sleep 5
+    cd /app/backend && python migrate_smtp.py
+    touch /app/data/.db_initialized
+    service postgresql stop
+    sleep 2
+fi
+
+echo "Configuring SMTP..."
+debconf-set-selections <<< "postfix postfix/mailname string localhost"
+debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Site'"
+
+echo "Starting services..."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/mykeymanager.conf
+EOF
+
+RUN chmod +x /app/start.sh
+COPY configure-all-in-one.sh /app/configure-all-in-one.sh
+RUN chmod +x /app/configure-all-in-one.sh
+
+EXPOSE 3000 8000 5432 6379 25
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+USER root
+CMD ["/app/start.sh"]
