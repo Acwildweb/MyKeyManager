@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../api/client';
 import { LogoManagementPanel } from '../../components/LogoManagementPanel';
-import { IconManagementPanel } from '../../components/IconManagementPanel';
+// import { IconManagementPanel } from '../../components/IconManagementPanel';
 import { DESIGN_SYSTEM, colors, spacing, shadows, fontSize, fontWeight, borderRadius } from '../../styles/design-system';
 
 interface UserProfile {
@@ -1047,7 +1047,14 @@ export default function UserSettings({ onClose }: { onClose: () => void }) {
                 </div>
 
                 {/* Contenuto del pannello icone integrato direttamente */}
-                <IconManagementPanel onClose={() => {}} />
+                {/* <IconManagementPanel onClose={() => {}} /> */}
+                <div style={{
+                  padding: '20px',
+                  textAlign: 'center',
+                  color: '#6b7280'
+                }}>
+                  <p>Pannello icone temporaneamente disabilitato per build</p>
+                </div>
               </div>
             </div>
           )}
@@ -1084,7 +1091,26 @@ export default function UserSettings({ onClose }: { onClose: () => void }) {
               overflow: 'auto',
               position: 'relative'
             }}>
-              <IconManagementPanel onClose={() => setShowIconPanel(false)} />
+              {/* <IconManagementPanel onClose={() => setShowIconPanel(false)} /> */}
+              <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: '#6b7280'
+              }}>
+                <p>Pannello icone temporaneamente disabilitato per build</p>
+                <button 
+                  onClick={() => setShowIconPanel(false)}
+                  style={{
+                    marginTop: '10px',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Chiudi
+                </button>
+              </div>
             </div>
           </div>
         )}
