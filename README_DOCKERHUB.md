@@ -54,15 +54,38 @@ docker pull acwild/mykeymanager-backend:latest
 
 ## 🎯 Deployment Options
 
-### Option 1: All-in-One (Fastest - 10 seconds)
+## 🚀 Deployment Options
+
+### Option 1: Quick Start All-in-One (Recommended for Testing)
 ```bash
-# Single container with everything included
-docker run -d \
-  --name mykeymanager \
-  -p 8080:80 \
-  -v mykeymanager_data:/var/lib/postgresql/14/main \
-  acwild/mykeymanager-all-in-one:latest
+# Using Docker Compose for instant deployment
+curl -O https://raw.githubusercontent.com/acwild/MyKeyManager/main/docker-compose.hub-all-in-one.yml
+docker-compose -f docker-compose.hub-all-in-one.yml up -d
 ```
+**Access:** http://localhost:3000  
+**Time:** ~30 seconds  
+**Use case:** Testing, development, quick demos
+
+### Option 2: Production Microservices
+```bash
+# Production-ready with separate containers
+curl -O https://raw.githubusercontent.com/acwild/MyKeyManager/main/docker-compose.hub.yml
+docker-compose -f docker-compose.hub.yml up -d
+```
+**Access:** http://localhost:3000  
+**Time:** ~45 seconds  
+**Use case:** Production, scaling, customization
+
+### Option 3: Custom Build
+```bash
+# Build from source for maximum control
+git clone https://github.com/acwild/MyKeyManager.git
+cd MyKeyManager
+docker-compose up -d
+```
+**Access:** http://localhost:3000  
+**Time:** ~5 minutes  
+**Use case:** Development, customization, contribution
 
 ### Option 2: Docker Compose All-in-One
 ```yaml

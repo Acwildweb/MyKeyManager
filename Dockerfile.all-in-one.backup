@@ -15,32 +15,28 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV NODE_ENV=production
 
 # Install system dependencies
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-    # Python and build tools
     python3.11 \
     python3.11-dev \
     python3-pip \
     python3.11-venv \
-    # Node.js and npm
     curl \
-    # PostgreSQL
     postgresql \
     postgresql-contrib \
-    # Redis
     redis-server \
-    # Nginx
     nginx \
-    # SMTP (Postfix)
     postfix \
-    # Utilities
     supervisor \
     cron \
     vim \
     wget \
     unzip \
-    # Cleanup
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python
 
 # Install Node.js 18.x
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -86,23 +82,37 @@ RUN sed -i 's/^bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
 # BACKEND SETUP
 # =========================================================================
 
-# Copy backend requirements and install dependencies
-COPY backend/pyproject.toml /app/backend/
 WORKDIR /app/backend
 
 # Install Python dependencies
 RUN pip3 install --upgrade pip setuptools wheel
-RUN pip3 install poetry
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev --no-interaction --no-ansi
+
+# Install dependencies directly with pip (avoid Poetry version conflicts)
+RUN pip3 install \
+    "fastapi>=0.111.0,<0.112.0" \
+    "uvicorn[standard]>=0.30.0,<0.31.0" \
+    "python-multipart>=0.0.9,<0.1.0" \
+    "email-validator>=2.1.0,<3.0.0" \
+    "passlib[bcrypt]>=1.7.4,<2.0.0" \
+    "pyjwt>=2.8.0,<3.0.0" \
+    "SQLAlchemy>=2.0.30,<3.0.0" \
+    "psycopg2-binary>=2.9.9,<3.0.0" \
+    "python-dotenv>=1.0.1,<2.0.0" \
+    "httpx>=0.27.0,<1.0.0" \
+    "slowapi>=0.1.9,<1.0.0" \
+    "itsdangerous>=2.2.0,<3.0.0" \
+    "redis>=5.0.4,<6.0.0" \
+    "cryptography>=42.0.8,<43.0.0" \
+    "pydantic-settings>=2.0.0,<3.0.0"
 
 # Copy backend application
 COPY backend/app /app/backend/app
 COPY backend/migrate_smtp.py /app/backend/
 
 # =========================================================================
-# FRONTEND SETUP
+# FRONTEND BUILD STAGE
 # =========================================================================
+FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -113,7 +123,7 @@ COPY frontend/vite.config.ts ./
 COPY frontend/vite-env.d.ts ./
 
 # Install frontend dependencies
-RUN npm ci --only=production
+RUN npm install
 
 # Copy frontend source
 COPY frontend/src ./src
@@ -122,6 +132,75 @@ COPY frontend/index.html ./
 
 # Build frontend
 RUN npm run build
+
+# =========================================================================
+# MAIN UBUNTU IMAGE
+# =========================================================================
+FROM ubuntu:22.04
+
+ENV TZ=Europe/Rome
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV NODE_ENV=production
+
+# Install system dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    python3.11-venv \
+    curl \
+    postgresql \
+    postgresql-contrib \
+    redis-server \
+    nginx \
+    postfix \
+    supervisor \
+    cron \
+    vim \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python
+
+# Install Node.js (needed for some runtime dependencies)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Create user
+RUN useradd -m -s /bin/bash mykeymanager \
+    && usermod -aG sudo mykeymanager
+
+# Create application directories
+RUN mkdir -p /app/backend /app/frontend /app/data /app/logs /app/scripts
+
+WORKDIR /app
+
+# Configure PostgreSQL
+RUN service postgresql start && \
+    sudo -u postgres createdb mykeymanager && \
+    sudo -u postgres psql mykeymanager -c "CREATE USER mykeymanager WITH PASSWORD 'ChangeMe!123';" && \
+    sudo -u postgres psql mykeymanager -c "GRANT ALL PRIVILEGES ON DATABASE mykeymanager TO mykeymanager;" && \
+    service postgresql stop
+
+RUN echo "host all all 127.0.0.1/32 md5" >> /etc/postgresql/14/main/pg_hba.conf
+RUN echo "listen_addresses = 'localhost'" >> /etc/postgresql/14/main/postgresql.conf
+
+# Configure Redis
+RUN sed -i 's/^daemonize no/daemonize yes/' /etc/redis/redis.conf
+RUN sed -i 's/^bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
+
+# =========================================================================
+# BACKEND SETUP
+# =========================================================================
+
+WORKDIR /app/backend
 
 # =========================================================================
 # NGINX SETUP
@@ -204,6 +283,9 @@ EOF
 # Enable site and remove default
 RUN ln -sf /etc/nginx/sites-available/mykeymanager /etc/nginx/sites-enabled/
 RUN rm -f /etc/nginx/sites-enabled/default
+
+# Copy frontend build from build stage
+COPY --from=frontend-builder /app/frontend/dist /var/www/html
 
 # =========================================================================
 # POSTFIX SMTP SETUP
