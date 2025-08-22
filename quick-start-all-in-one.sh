@@ -100,13 +100,13 @@ print_status "Setting up configuration files..."
 
 if [ ! -f "docker-compose.hub-all-in-one.yml" ]; then
     print_status "Downloading docker-compose configuration..."
-    curl -sL https://raw.githubusercontent.com/acwild/MyKeyManager/main/docker-compose.hub-all-in-one.yml -o docker-compose.hub-all-in-one.yml
+    curl -sL https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/docker-compose.hub-all-in-one.yml -o docker-compose.hub-all-in-one.yml
     print_success "Downloaded docker-compose.hub-all-in-one.yml"
 fi
 
 if [ ! -f ".env.all-in-one.example" ]; then
     print_status "Downloading environment example..."
-    curl -sL https://raw.githubusercontent.com/acwild/MyKeyManager/main/.env.all-in-one.example -o .env.all-in-one.example
+    curl -sL https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/.env.all-in-one.example -o .env.all-in-one.example
     print_success "Downloaded .env.all-in-one.example"
 fi
 

@@ -65,7 +65,7 @@ Sistema completo di gestione licenze software con dashboard amministrativo moder
 ### 🎯 All-in-One Quick Start (30 secondi)
 ```bash
 # Download e avvio dello script automatico
-curl -sL https://raw.githubusercontent.com/acwild/MyKeyManager/main/quick-start-all-in-one.sh -o quick-start.sh
+curl -sL https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/quick-start-all-in-one.sh -o quick-start.sh
 chmod +x quick-start.sh
 ./quick-start.sh
 
@@ -78,7 +78,7 @@ chmod +x quick-start.sh
 ### 📦 Docker Hub Microservizi (Produzione)
 ```bash
 # Download configurazione pronta
-curl -O https://raw.githubusercontent.com/acwild/MyKeyManager/main/docker-compose.hub.yml
+curl -O https://raw.githubusercontent.com/Acwildweb/MyKeyManager/main/docker-compose.hub.yml
 docker compose -f docker-compose.hub.yml up -d
 
 # Accesso: http://localhost:3000
@@ -90,7 +90,7 @@ docker compose -f docker-compose.hub.yml up -d
 ### 🔧 Build Locale (Sviluppo)
 ```bash
 # Clone e build da sorgente
-git clone https://github.com/acwild/MyKeyManager.git
+git clone https://github.com/Acwildweb/MyKeyManager.git
 cd MyKeyManager
 docker compose up -d
 
