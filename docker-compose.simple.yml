@@ -1,6 +1,6 @@
 # =========================================================================
 # MyKeyManager All-in-One Docker Compose
-# FIXED VERSION - Ready for Container Managers  
+# SIMPLE VERSION - Massima Compatibilità Container Managers
 # =========================================================================
 
 services:
@@ -32,7 +32,7 @@ services:
     networks:
       - mykeymanager-network
 
-  # Backend API (avvio dopo 15 secondi per attendere DB)
+  # Backend API
   backend:
     image: acwild/mykeymanager-backend:v1.1.2
     container_name: mykeymanager-backend
@@ -52,7 +52,7 @@ services:
     networks:
       - mykeymanager-network
 
-  # Frontend Web Interface (avvio dopo 30 secondi per attendere Backend)
+  # Frontend Web Interface
   frontend:
     image: acwild/mykeymanager-frontend:v1.1.1
     container_name: mykeymanager-frontend
