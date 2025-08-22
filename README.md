@@ -43,7 +43,7 @@ Sistema completo di gestione licenze software con dashboard amministrativo moder
 - **Sistema intelligente gestione porte** con auto-detection conflitti
 - **Container separati**: Backend FastAPI, Frontend React, PostgreSQL, Redis, SMTP
 - **Immagini Docker Hub** precompilate per deploy istantaneo
-- **Volumes persistenti** per database
+- **Volumes persistenti** per database con **sistema di pulizia automatica**
 - **Hot-reload** in development
 - **Build ottimizzato** per produzione
 
@@ -124,6 +124,8 @@ docker compose -f devops/docker-compose.yml up --build
 - **Username**: `admin`
 - **Password**: `ChangeMe!123` 
 - ⚠️ **Cambiare immediatamente dopo il primo accesso!**
+
+> 🛠️ **Problemi di autenticazione?** Usa: `./clean-volumes.sh` oppure vedi [QUICK_CLEANUP.md](QUICK_CLEANUP.md)
 
 ### 🚀 Opzioni di Deployment
 
@@ -466,6 +468,9 @@ docker compose -f devops/docker-compose.yml up --build
 - **Setup Guide**: [VERSIONING.md](VERSIONING.md)
 - **API Docs**: http://localhost:8000/docs
 - **Configuration**: Vedi sezione Configurazione Avanzata
+- **🧹 Pulizia Volumi**: [VOLUME_CLEANUP_GUIDE.md](VOLUME_CLEANUP_GUIDE.md)
+- **📦 All-in-One Guide**: [ALL_IN_ONE_GUIDE.md](ALL_IN_ONE_GUIDE.md)
+- **🐳 Docker Hub Guide**: [DOCKER_HUB_GUIDE.md](DOCKER_HUB_GUIDE.md)
 
 ---
 
