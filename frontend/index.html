@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/2.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyKeyManager</title>
+    
+    <!-- FontAwesome CDN per set di icone gratuiti -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Global Styles -->
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-weight: 500;
+        line-height: 1.6;
+        color: #0f172a;
+        background: #ffffff;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', system-ui, sans-serif;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #0f172a;
+      }
+      
+      button, input, select, textarea {
+        font-family: inherit;
+        font-weight: 500;
+      }
+      
+      .shadow-soft {
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+      
+      .shadow-medium {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      
+      .shadow-large {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      
+      /* Animation per il logo - ottimizzata per immagini trasparenti */
+      @keyframes logoFloat {
+        0%, 100% { 
+          transform: translateY(0px) rotate(0deg) scale(1); 
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+        50% { 
+          transform: translateY(-10px) rotate(2deg) scale(1.02); 
+          filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
+        }
+      }
+      
+      .logo-float {
+        animation: logoFloat 6s ease-in-out infinite;
+        transition: all 0.3s ease;
+      }
+      
+      /* Animazione hover per loghi trasparenti */
+      .logo-hover {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .logo-hover:hover {
+        transform: scale(1.05);
+        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
+      }
+      
+      /* Animazione di spin per i loading */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Effetti hover per migliorare l'interattività */
+      .btn-hover-effect {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .btn-hover-effect:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      
+      /* Pattern di sfondo decorativo */
+      .pattern-bg {
+        background-image: 
+          radial-gradient(circle at 25% 25%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+      }
+      
+      /* Gradiente personalizzato per il branding */
+      .brand-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      /* Effetto glass morphism */
+      .glass-effect {
+        backdrop-filter: blur(20px);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

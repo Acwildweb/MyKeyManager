@@ -1,0 +1,61 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.backend
+    container_name: mykeymanager-backend
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: mykeymanager
+      POSTGRES_USER: mykeyuser
+      POSTGRES_PASSWORD: mykeypass
+      SECRET_KEY: ${SECRET_KEY:-change-this}
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost
+    depends_on:
+      - db
+    networks:
+      - mknet
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ..
+      dockerfile: devops/Dockerfile.frontend
+    container_name: mykeymanager-frontend
+    depends_on:
+      - backend
+    networks:
+      - mknet
+    ports:
+      - "80:80"
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    container_name: mykeymanager-db
+    environment:
+      POSTGRES_DB: mykeymanager
+      POSTGRES_USER: mykeyuser
+      POSTGRES_PASSWORD: mykeypass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - mknet
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: mykeymanager-redis
+    networks:
+      - mknet
+    restart: unless-stopped
+  smtp:
+    image: bytemark/smtp
+    container_name: mykeymanager-smtp
+    networks:
+      - mknet
+    restart: unless-stopped
+networks:
+  mknet:
+    driver: bridge
+volumes:
+  db_data:

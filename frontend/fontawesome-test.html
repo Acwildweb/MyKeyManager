@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test FontAwesome Integration - MyKeyManager</title>
+    
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .icon-set {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .icon-set h3 {
+            margin: 0 0 20px 0;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon-examples {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+        
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #f1f5f9;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .icon-item:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+        
+        .icon-item i {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        
+        .icon-item span {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .config-demo {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .config-demo button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-solid {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-regular {
+            background: #64748b;
+            color: white;
+        }
+        
+        .btn-brands {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .btn-solid:hover { background: #2563eb; }
+        .btn-regular:hover { background: #475569; }
+        .btn-brands:hover { background: #7c3aed; }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .dynamic-icons {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .size-demo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-rocket"></i> Test Integrazione FontAwesome</h1>
+            <p>Sistema di icone professionale per MyKeyManager</p>
+        </div>
+        
+        <div class="status">
+            <i class="fas fa-check-circle"></i>
+            FontAwesome 6.4.0 caricato tramite CDN
+        </div>
+        
+        <div class="icon-grid">
+            <!-- Solid Icons -->
+            <div class="icon-set">
+                <h3><i class="fas fa-layer-group"></i> Solid Icons (fas)</h3>
+                <div class="icon-examples">
+                    <div class="icon-item">
+                        <i class="fas fa-home"></i>
+                        <span>fa-home</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-user"></i>
+                        <span>fa-user</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-cog"></i>
+                        <span>fa-cog</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>fa-shield-alt</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-key"></i>
+                        <span>fa-key</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-database"></i>
+                        <span>fa-database</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span>fa-chart-line</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-edit"></i>
+                        <span>fa-edit</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-trash"></i>
+                        <span>fa-trash</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fas fa-plus"></i>
+                        <span>fa-plus</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Regular Icons -->
+            <div class="icon-set">
+                <h3><i class="far fa-circle"></i> Regular Icons (far)</h3>
+                <div class="icon-examples">
+                    <div class="icon-item">
+                        <i class="far fa-user"></i>
+                        <span>fa-user</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-bell"></i>
+                        <span>fa-bell</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-calendar"></i>
+                        <span>fa-calendar</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-envelope"></i>
+                        <span>fa-envelope</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-file-alt"></i>
+                        <span>fa-file-alt</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-heart"></i>
+                        <span>fa-heart</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-star"></i>
+                        <span>fa-star</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-bookmark"></i>
+                        <span>fa-bookmark</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-clock"></i>
+                        <span>fa-clock</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="far fa-check-circle"></i>
+                        <span>fa-check-circle</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Brand Icons -->
+            <div class="icon-set">
+                <h3><i class="fab fa-font-awesome"></i> Brand Icons (fab)</h3>
+                <div class="icon-examples">
+                    <div class="icon-item">
+                        <i class="fab fa-github"></i>
+                        <span>fa-github</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-twitter"></i>
+                        <span>fa-twitter</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-linkedin"></i>
+                        <span>fa-linkedin</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-google"></i>
+                        <span>fa-google</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-microsoft"></i>
+                        <span>fa-microsoft</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-apple"></i>
+                        <span>fa-apple</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-facebook"></i>
+                        <span>fa-facebook</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-instagram"></i>
+                        <span>fa-instagram</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-youtube"></i>
+                        <span>fa-youtube</span>
+                    </div>
+                    <div class="icon-item">
+                        <i class="fab fa-docker"></i>
+                        <span>fa-docker</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><i class="fas fa-sliders-h"></i> Test Configurazione Dinamica</h2>
+            <p>Questo simula il sistema di configurazione che permette di cambiare stile delle icone:</p>
+            
+            <div class="config-demo">
+                <button class="btn-solid" onclick="changeIconStyle('fas')">
+                    <i class="fas fa-layer-group"></i>
+                    Solid Icons
+                </button>
+                <button class="btn-regular" onclick="changeIconStyle('far')">
+                    <i class="far fa-circle"></i>
+                    Regular Icons
+                </button>
+                <button class="btn-brands" onclick="changeIconStyle('fab')">
+                    <i class="fab fa-font-awesome"></i>
+                    Brand Icons
+                </button>
+            </div>
+            
+            <div class="dynamic-icons">
+                <h4>Icone dinamiche (cambiano con i pulsanti sopra):</h4>
+                <div class="size-demo">
+                    <i id="dynamic-user" class="fas fa-user fa-2x" style="color: #3b82f6;"></i>
+                    <span>Utente</span>
+                </div>
+                <div class="size-demo">
+                    <i id="dynamic-home" class="fas fa-home fa-2x" style="color: #10b981;"></i>
+                    <span>Home</span>
+                </div>
+                <div class="size-demo">
+                    <i id="dynamic-settings" class="fas fa-cog fa-2x" style="color: #f59e0b;"></i>
+                    <span>Impostazioni</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><i class="fas fa-palette"></i> Test Dimensioni</h2>
+            <p>FontAwesome supporta diverse dimensioni tramite classi:</p>
+            
+            <div style="display: flex; align-items: center; gap: 20px; margin: 20px 0;">
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-xs"></i>
+                    <div>fa-xs</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-sm"></i>
+                    <div>fa-sm</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star"></i>
+                    <div>normal</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-lg"></i>
+                    <div>fa-lg</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-xl"></i>
+                    <div>fa-xl</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-2x"></i>
+                    <div>fa-2x</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-3x"></i>
+                    <div>fa-3x</div>
+                </div>
+                <div style="text-align: center;">
+                    <i class="fas fa-star fa-4x"></i>
+                    <div>fa-4x</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><i class="fas fa-info-circle"></i> Sistema Implementato</h2>
+            <p><strong>✅ FontAwesome 6.4.0 integrato tramite CDN</strong></p>
+            <p><strong>✅ Pannello di configurazione per cambiare set di icone</strong></p>
+            <p><strong>✅ Sistema di mappatura icone centralizzato</strong></p>
+            <p><strong>✅ Supporto per tutte le dimensioni e stili</strong></p>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e0f2fe; border-left: 4px solid #0288d1; border-radius: 4px;">
+                <strong>Prossimi Passi:</strong>
+                <ul style="margin: 10px 0;">
+                    <li>Installare le dipendenze FontAwesome tramite npm quando disponibile</li>
+                    <li>Sostituire il sistema SVG personalizzato con FontAwesome</li>
+                    <li>Testare il pannello di configurazione nell'applicazione</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function changeIconStyle(style) {
+            const iconMap = {
+                'fas': {
+                    'user': 'fa-user',
+                    'home': 'fa-home', 
+                    'settings': 'fa-cog'
+                },
+                'far': {
+                    'user': 'fa-user',
+                    'home': 'fa-home',
+                    'settings': 'fa-circle'
+                },
+                'fab': {
+                    'user': 'fa-github',
+                    'home': 'fa-google',
+                    'settings': 'fa-microsoft'
+                }
+            };
+            
+            // Aggiorna le icone dinamiche
+            Object.keys(iconMap[style]).forEach(iconType => {
+                const element = document.getElementById(`dynamic-${iconType}`);
+                if (element) {
+                    element.className = `${style} ${iconMap[style][iconType]} fa-2x`;
+                }
+            });
+            
+            console.log(`Cambiato set di icone a: ${style}`);
+        }
+        
+        // Test del sistema di eventi
+        window.addEventListener('iconConfigChanged', (event) => {
+            console.log('Configurazione icone cambiata:', event.detail);
+        });
+        
+        console.log('Sistema FontAwesome caricato e funzionante!');
+    </script>
+</body>
+</html>
