@@ -13,11 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
 # Install Poetry
 ENV POETRY_VERSION=1.8.3
 RUN pip install --no-cache-dir "poetry==$POETRY_VERSION"
-COPY backend/pyproject.toml ./
+COPY pyproject.toml ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --only main
 
 # Copy app
-COPY backend/app ./app
+COPY app ./app
 
 USER appuser
 EXPOSE 8000
