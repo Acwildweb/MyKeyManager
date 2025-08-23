@@ -2,15 +2,15 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Build-time arguments per configurazione API
-ARG VITE_API_URL=http://localhost:8001/api/v1
-ARG VITE_API_BASE_URL=http://localhost:8001/api/v1
-ARG VITE_BACKEND_URL=http://localhost:8001
+# Build-time arguments per configurazione API (solo per development)
+ARG VITE_API_URL
+ARG VITE_API_BASE_URL
+ARG VITE_BACKEND_URL
 
-# Set environment variables per build
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+# Set environment variables per build (vuoti in produzione per usare proxy interno)
+ENV VITE_API_URL=""
+ENV VITE_API_BASE_URL=""
+ENV VITE_BACKEND_URL=""
 
 # Copy package files first for better caching
 COPY package.json ./
@@ -36,7 +36,7 @@ server {
     add_header X-Frame-Options "DENY";
     add_header X-Content-Type-Options "nosniff";
     add_header Referrer-Policy "no-referrer";
-    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; script-src 'self'; font-src 'self' https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
+    add_header Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; script-src 'self'; font-src 'self' https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';";
     
     # Proxy API requests to backend
     location /api/ {
