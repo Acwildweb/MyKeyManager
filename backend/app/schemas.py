@@ -104,6 +104,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+class LoginRequest(BaseModel):
+    username: str  # Può essere username o email
+    password: str
+
 class LicenseUseRequest(BaseModel):
     iso_download: bool = True
 
