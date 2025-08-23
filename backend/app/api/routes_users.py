@@ -61,21 +61,20 @@ def update_current_user_profile(
 
 @router.post("/change-password")
 def change_password(
-    current_password: str,
-    new_password: str,
+    password_request: schemas.ChangePasswordRequest,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     """Change user password"""
     # Verifica la password attuale
-    if not verify_password(current_password, current_user.password_hash):
+    if not verify_password(password_request.current_password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password attuale non corretta"
         )
     
     # Aggiorna la password
-    current_user.password_hash = get_password_hash(new_password)
+    current_user.password_hash = get_password_hash(password_request.new_password)
     db.commit()
     
     return {"message": "Password aggiornata con successo"}

@@ -106,3 +106,7 @@ class Token(BaseModel):
 
 class LicenseUseRequest(BaseModel):
     iso_download: bool = True
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

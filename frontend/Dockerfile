@@ -1,6 +1,16 @@
-# Frontend Dockerfile per CasaOS (Vite + React build then serve static with nginx)
+# Frontend Dockerfile per Server ARM64 (Vite + React build then serve static with nginx)
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Build-time arguments per configurazione API
+ARG VITE_API_URL=http://localhost:8001/api/v1
+ARG VITE_API_BASE_URL=http://localhost:8001/api/v1
+ARG VITE_BACKEND_URL=http://localhost:8001
+
+# Set environment variables per build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 
 # Copy package files first for better caching
 COPY package.json ./
@@ -10,7 +20,7 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application con configurazione API corretta
 RUN npm run build
 
 FROM nginx:1.27-alpine AS prod
