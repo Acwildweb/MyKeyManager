@@ -1,12 +1,13 @@
 # =========================================================================
-# MyKeyManager - Docker Compose per CasaOS ARM64
-# Usa immagini Docker Hub multi-architettura - Ottimizzato per ARM
+# MyKeyManager - Docker Compose per CasaOS ARM64 
+# Forza uso immagini ARM64 - Risolve problemi platform mismatch
 # =========================================================================
 
 services:
   # Database PostgreSQL
   database:
     image: postgres:15-alpine
+    platform: linux/arm64
     container_name: mykeymanager-db
     environment:
       POSTGRES_DB: mykeymanager
@@ -29,6 +30,7 @@ services:
   # Backend API - Immagine Docker Hub multi-arch
   backend:
     image: acwild/mykeymanager-backend:latest
+    platform: linux/arm64
     container_name: mykeymanager-api
     environment:
       # Database Configuration
@@ -72,6 +74,7 @@ services:
   # Frontend Web - Immagine Docker Hub multi-arch
   frontend:
     image: acwild/mykeymanager-frontend:latest
+    platform: linux/arm64
     container_name: mykeymanager-web
     environment:
       VITE_API_URL: http://YOUR_SERVER_IP:8001
