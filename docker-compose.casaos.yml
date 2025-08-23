@@ -1,6 +1,6 @@
 # =========================================================================
-# MyKeyManager - Docker Compose per CasaOS ARM64 
-# Forza uso immagini ARM64 - Risolve problemi platform mismatch
+# MyKeyManager - Docker Compose per CasaOS ARM64 (Build Locale)
+# Build locale del codice sorgente - Configurazione API corretta
 # =========================================================================
 
 services:
@@ -27,9 +27,11 @@ services:
     networks:
       - mykeymanager
 
-  # Backend API - Immagine Docker Hub multi-arch
+  # Backend API - Build locale per configurazione corretta
   backend:
-    image: acwild/mykeymanager-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     platform: linux/arm64
     container_name: mykeymanager-api
     environment:
@@ -47,7 +49,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 480
       
       # CORS - Configurazione per CasaOS
-      ALLOWED_ORIGINS: "http://localhost:8080,http://localhost:80,http://127.0.0.1:8080,http://127.0.0.1:80,http://YOUR_SERVER_IP:8080,http://YOUR_SERVER_IP:80,http://YOUR_SERVER_IP,https://YOUR_SERVER_IP:8080,https://YOUR_SERVER_IP"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:80,http://127.0.0.1:3000,http://127.0.0.1:80,http://YOUR_SERVER_IP:3000,http://YOUR_SERVER_IP:80,http://YOUR_SERVER_IP,https://YOUR_SERVER_IP:3000,https://YOUR_SERVER_IP"
       
       # Rate Limiting (senza Redis)
       RATE_LIMIT: "100/hour"
@@ -75,9 +77,11 @@ services:
     networks:
       - mykeymanager
 
-  # Frontend Web - Immagine Docker Hub multi-arch
+  # Frontend Web - Build locale per configurazione corretta
   frontend:
-    image: acwild/mykeymanager-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     platform: linux/arm64
     container_name: mykeymanager-web
     environment:
@@ -85,7 +89,7 @@ services:
       VITE_API_BASE_URL: http://YOUR_SERVER_IP:8001/api/v1
       VITE_BACKEND_URL: http://YOUR_SERVER_IP:8001
     ports:
-      - "8080:80"
+      - "3000:80"
     restart: unless-stopped
     depends_on:
       backend:

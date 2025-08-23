@@ -1,0 +1,75 @@
+# =========================================================================
+# MyKeyManager - Docker Compose con Nginx Proxy
+# Soluzione per usare immagini Docker Hub con configurazione dinamica
+# =========================================================================
+
+services:
+  # Nginx Reverse Proxy - Risolve problema API endpoints
+  proxy:
+    image: nginx:alpine
+    platform: linux/arm64
+    container_name: mykeymanager-proxy
+    ports:
+      - "3000:80"
+      - "8001:8001"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+      - mykeymanager
+
+  # Database PostgreSQL
+  database:
+    image: postgres:15-alpine
+    platform: linux/arm64
+    container_name: mykeymanager-db
+    environment:
+      POSTGRES_DB: mykeymanager
+      POSTGRES_USER: mykeymanager
+      POSTGRES_PASSWORD: MyKey2024!Secure
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mykeymanager
+    restart: unless-stopped
+
+  # Backend da Docker Hub
+  backend:
+    image: acwild/mykeymanager-backend:latest
+    platform: linux/arm64
+    container_name: mykeymanager-api
+    environment:
+      DATABASE_URL: postgresql://mykeymanager:MyKey2024!Secure@database:5432/mykeymanager
+      SECRET_KEY: MyKeyManager-ARM64-Production-Secret-2024
+      ALLOWED_ORIGINS: "http://localhost:3000,http://YOUR_SERVER_IP:3000"
+    depends_on:
+      - database
+    restart: unless-stopped
+    networks:
+      - mykeymanager
+    # Espone solo internamente
+    expose:
+      - "8000"
+
+  # Frontend da Docker Hub
+  frontend:
+    image: acwild/mykeymanager-frontend:latest
+    platform: linux/arm64
+    container_name: mykeymanager-web
+    restart: unless-stopped
+    networks:
+      - mykeymanager
+    # Espone solo internamente
+    expose:
+      - "80"
+
+networks:
+  mykeymanager:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

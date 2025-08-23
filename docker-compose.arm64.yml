@@ -1,0 +1,182 @@
+# =========================================================================
+# MyKeyManager - Docker Compose per Server ARM64 Esterni
+# Configurazione ottimizzata per server Linux ARM64 (non CasaOS)
+# =========================================================================
+
+services:
+  # Database PostgreSQL - ARM64 ottimizzato
+  database:
+    image: postgres:15-alpine
+    platform: linux/arm64
+    container_name: mykeymanager-db
+    environment:
+      POSTGRES_DB: mykeymanager
+      POSTGRES_USER: mykeymanager
+      POSTGRES_PASSWORD: MyKey2024!Secure
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Ottimizzazioni per ARM64
+      POSTGRES_SHARED_BUFFERS: "256MB"
+      POSTGRES_EFFECTIVE_CACHE_SIZE: "512MB"
+      POSTGRES_WORK_MEM: "8MB"
+      POSTGRES_MAINTENANCE_WORK_MEM: "64MB"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mykeymanager -d mykeymanager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mykeymanager
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Backend API - Build locale per server ARM64
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    platform: linux/arm64
+    container_name: mykeymanager-api
+    environment:
+      # Database Configuration
+      DATABASE_URL: postgresql://mykeymanager:MyKey2024!Secure@database:5432/mykeymanager
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: mykeymanager
+      POSTGRES_USER: mykeymanager
+      POSTGRES_PASSWORD: MyKey2024!Secure
+      
+      # Security - Cambia in produzione
+      SECRET_KEY: MyKeyManager-ARM64-Production-Secret-2024-Change-This
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 480
+      
+      # CORS - Configurazione per server esterno
+      ALLOWED_ORIGINS: "http://localhost:3000,http://YOUR_SERVER_IP:3000,https://YOUR_DOMAIN:3000,https://YOUR_DOMAIN,http://YOUR_SERVER_IP"
+      
+      # Rate Limiting (senza Redis per semplicità)
+      RATE_LIMIT: "200/hour"
+      
+      # Environment
+      LOG_LEVEL: "INFO"
+      ENVIRONMENT: "production"
+      
+      # SMTP Configuration per notifiche (opzionale)
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_FROM: noreply@yourdomain.com
+      # SMTP_USERNAME: your-email@gmail.com
+      # SMTP_PASSWORD: your-app-password
+      
+      # Performance per ARM64
+      UVICORN_WORKERS: 2
+      UVICORN_MAX_REQUESTS: 1000
+      UVICORN_TIMEOUT_KEEP_ALIVE: 5
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - mykeymanager
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Frontend Web - Build locale per server ARM64
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    platform: linux/arm64
+    container_name: mykeymanager-web
+    environment:
+      # API Configuration - Aggiorna con IP/dominio del server
+      VITE_API_URL: http://YOUR_SERVER_IP:8001/api/v1
+      VITE_API_BASE_URL: http://YOUR_SERVER_IP:8001/api/v1
+      VITE_BACKEND_URL: http://YOUR_SERVER_IP:8001
+      # Per domini personalizzati
+      # VITE_API_URL: https://YOUR_DOMAIN:8001/api/v1
+      # VITE_API_BASE_URL: https://YOUR_DOMAIN:8001/api/v1
+      # VITE_BACKEND_URL: https://YOUR_DOMAIN:8001
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - mykeymanager
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+# Network isolata per sicurezza
+networks:
+  mykeymanager:
+    name: mykeymanager-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+# Volumi persistenti
+volumes:
+  postgres_data:
+    name: mykeymanager_postgres_data
+    driver: local
+
+# =========================================================================
+# CONFIGURAZIONE POST-DEPLOYMENT
+# =========================================================================
+#
+# 1. CONFIGURA IP SERVER:
+#    Sostituisci YOUR_SERVER_IP con l'IP effettivo del server
+#
+# 2. CONFIGURA DOMINIO (opzionale):
+#    Sostituisci YOUR_DOMAIN con il tuo dominio
+#
+# 3. CONFIGURA HTTPS (consigliato per produzione):
+#    Usa un reverse proxy come Nginx o Traefik
+#
+# 4. BACKUP DATABASE:
+#    docker compose exec database pg_dump -U mykeymanager mykeymanager > backup.sql
+#
+# 5. MONITORAGGIO:
+#    docker compose logs -f
+#    docker compose ps
+#    curl http://YOUR_SERVER_IP:8001/health
+#
+# =========================================================================

@@ -1,14 +1,14 @@
-# Frontend Dockerfile (Vite + React build then serve static with nginx)
+# Frontend Dockerfile per CasaOS (Vite + React build then serve static with nginx)
 FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY frontend/package.json ./
+COPY package.json ./
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY frontend/ .
+COPY . .
 
 # Build the application
 RUN npm run build

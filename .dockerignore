@@ -1,0 +1,62 @@
+# .dockerignore per build dal root del progetto
+
+# Esclude directory non necessarie per il build
+node_modules/
+*/node_modules/
+npm-debug.log*
+.npm
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+
+# Scripts
+*.sh
+install-*
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Development
+.env*
+*.log
+coverage/
+.coverage
+.pytest_cache/
+
+# Images e media non necessari per il build
+image/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.svg
