@@ -33,6 +33,23 @@ print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
+# Funzioni helper per Docker con gestione sudo
+docker_cmd() {
+    if [ -n "$DOCKER_CMD" ]; then
+        $DOCKER_CMD "$@"
+    else
+        docker "$@"
+    fi
+}
+
+docker_compose_cmd() {
+    if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+        $DOCKER_COMPOSE_CMD "$@"
+    else
+        docker compose "$@"
+    fi
+}
+
 # Controlla prerequisiti
 echo "🔍 Controllo prerequisiti..."
 
@@ -47,6 +64,55 @@ if ! command -v docker compose &> /dev/null; then
 fi
 
 print_status "Docker e Docker Compose sono installati"
+
+# Controlla permessi Docker
+echo "🔐 Controllo permessi Docker..."
+if ! docker ps &> /dev/null; then
+    print_warning "Permessi Docker insufficienti. Tentativo di risoluzione..."
+    
+    # Controlla se l'utente è nel gruppo docker
+    if ! groups | grep -q docker; then
+        print_info "Aggiunta utente al gruppo docker..."
+        if command -v sudo &> /dev/null; then
+            sudo usermod -aG docker $USER
+            print_warning "Utente aggiunto al gruppo docker."
+            print_warning "RIAVVIA IL TERMINALE e riesegui lo script per applicare i permessi!"
+            print_info "Comando: logout && login   oppure   newgrp docker"
+            exit 1
+        else
+            print_error "Sudo non disponibile. Esegui: su -c 'usermod -aG docker $USER'"
+            exit 1
+        fi
+    fi
+    
+    # Verifica permessi socket Docker
+    if [ ! -w /var/run/docker.sock ]; then
+        print_warning "Permessi socket Docker insufficienti..."
+        if command -v sudo &> /dev/null; then
+            print_info "Applicazione permessi temporanei..."
+            sudo chmod 666 /var/run/docker.sock
+            print_status "Permessi temporanei applicati"
+        else
+            print_error "Impossibile correggere i permessi. Esegui come root:"
+            print_error "sudo chmod 666 /var/run/docker.sock"
+            print_error "oppure"
+            print_error "sudo ./install-server.sh"
+            exit 1
+        fi
+    fi
+    
+    # Test finale permessi
+    if ! docker ps &> /dev/null; then
+        print_error "Permessi Docker ancora insufficienti."
+        print_error "Soluzioni:"
+        print_error "1. Esegui: sudo ./install-server.sh"
+        print_error "2. Riavvia il terminale dopo l'aggiunta al gruppo docker"
+        print_error "3. Esegui: newgrp docker && ./install-server.sh"
+        exit 1
+    fi
+fi
+
+print_status "Permessi Docker verificati"
 
 # Controlla se i file necessari esistono
 if [ ! -f "docker-compose.server.yml" ]; then
@@ -137,7 +203,7 @@ fi
 
 # Ferma container esistenti
 echo "🛑 Ferma eventuali container esistenti..."
-docker compose -f docker-compose.server.yml down 2>/dev/null || true
+docker_compose_cmd -f docker-compose.server.yml down 2>/dev/null || true
 
 # Opzione per pulire volumi
 read -p "🧹 Vuoi pulire i volumi esistenti (CANCELLA TUTTI I DATI)? (y/N): " -n 1 -r
@@ -149,11 +215,11 @@ fi
 
 # Pull delle immagini
 echo "📥 Download immagini Docker..."
-docker compose -f docker-compose.server.yml pull
+docker_compose_cmd -f docker-compose.server.yml pull
 
 # Avvio servizi
 echo "🚀 Avvio servizi MyKeyManager..."
-docker compose -f docker-compose.server.yml up -d
+docker_compose_cmd -f docker-compose.server.yml up -d
 
 # Attesa servizi
 echo "⏳ Attendo che i servizi siano pronti..."
@@ -161,14 +227,14 @@ sleep 15
 
 # Controllo stato servizi
 echo "📊 Controllo stato servizi..."
-docker compose -f docker-compose.server.yml ps
+docker_compose_cmd -f docker-compose.server.yml ps
 
 # Test connettività
 echo "🧪 Test connettività..."
 
 # Test database
 for i in {1..30}; do
-    if docker exec "${CONTAINER_PREFIX:-mykeymanager}-db" pg_isready -U "${POSTGRES_USER:-mykeymanager}" -d "${POSTGRES_DB:-mykeymanager}" >/dev/null 2>&1; then
+    if docker_cmd exec "${CONTAINER_PREFIX:-mykeymanager}-db" pg_isready -U "${POSTGRES_USER:-mykeymanager}" -d "${POSTGRES_DB:-mykeymanager}" >/dev/null 2>&1; then
         print_status "Database PostgreSQL pronto"
         break
     fi
@@ -222,10 +288,10 @@ echo "   Username: admin"
 echo "   Password: ChangeMe!123"
 echo ""
 echo "🔧 COMANDI UTILI:"
-echo "   Status: docker compose -f docker-compose.server.yml ps"
-echo "   Logs: docker compose -f docker-compose.server.yml logs"
-echo "   Stop: docker compose -f docker-compose.server.yml down"
-echo "   Restart: docker compose -f docker-compose.server.yml restart"
+echo "   Status: docker_compose_cmd -f docker-compose.server.yml ps"
+echo "   Logs: docker_compose_cmd -f docker-compose.server.yml logs"
+echo "   Stop: docker_compose_cmd -f docker-compose.server.yml down"
+echo "   Restart: docker_compose_cmd -f docker-compose.server.yml restart"
 echo ""
 echo "⚠️  SICUREZZA:"
 echo "   1. Cambia la password admin nell'interfaccia web"
@@ -238,5 +304,5 @@ echo ""
 read -p "Vuoi vedere i logs dei servizi? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker compose -f docker-compose.server.yml logs --tail 20
+    docker_compose_cmd -f docker-compose.server.yml logs --tail 20
 fi
