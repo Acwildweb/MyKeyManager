@@ -18,7 +18,18 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     console.log('Attempting login with:', { username, password });
     try {
       console.log('Making API request to /auth/login');
-      const res = await api.post('/auth/login', { username, password });
+      
+      // Crea FormData per OAuth2PasswordRequestForm
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+      
+      const res = await api.post('/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        }
+      });
+      
       console.log('Login successful:', res.data);
       setAuthToken(res.data.access_token);
       localStorage.setItem('token', res.data.access_token);
