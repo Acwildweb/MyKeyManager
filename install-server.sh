@@ -122,12 +122,10 @@ download_files() {
 configure_docker_compose() {
     print_status "Configurazione Docker Compose per $DOCKER_PLATFORM..."
     
-    # Usa il docker-compose.server.yml se l'architettura è AMD64 e siamo su server
-    if [ "$DOCKER_PLATFORM" = "linux/amd64" ]; then
-        if [ -f "docker-compose.server.yml" ]; then
-            cp docker-compose.server.yml docker-compose.yml
-            print_success "Configurazione server AMD64 applicata"
-        fi
+    # Usa sempre il docker-compose.server.yml per installazioni su server
+    if [ -f "docker-compose.server.yml" ]; then
+        cp docker-compose.server.yml docker-compose.yml
+        print_success "Configurazione server multi-architettura applicata"
     fi
     
     # Sostituisci placeholder con IP reale
@@ -165,12 +163,14 @@ EOF
 start_services() {
     print_status "Avvio servizi MyKeyManager..."
     
-    # Ferma eventuali servizi in esecuzione
-    docker compose down 2>/dev/null || true
+    # Ferma e rimuovi eventuali container esistenti
+    print_status "Pulizia container esistenti..."
+    docker compose down -v 2>/dev/null || true
+    docker system prune -f 2>/dev/null || true
     
     # Costruisci e avvia i servizi
-    print_status "Costruzione e avvio container..."
-    docker compose up -d --build
+    print_status "Costruzione e avvio container per architettura $DOCKER_PLATFORM..."
+    docker compose up -d --build --force-recreate
     
     print_success "Servizi avviati!"
 }

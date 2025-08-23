@@ -1,6 +1,6 @@
 # =========================================================================
-# MyKeyManager - Docker Compose per Server CasaOS/AMD64
-# Versione ottimizzata per architettura x86_64/AMD64
+# MyKeyManager - Docker Compose per Server (Multi-architettura)
+# Versione ottimizzata per x86_64/AMD64 e ARM64/aarch64
 # =========================================================================
 
 services:
@@ -8,7 +8,6 @@ services:
   database:
     image: postgres:15-alpine
     container_name: mykeymanager-db
-    platform: linux/amd64
     environment:
       POSTGRES_DB: mykeymanager
       POSTGRES_USER: mykeymanager
@@ -27,13 +26,12 @@ services:
     networks:
       - mykeymanager
 
-  # Backend API - Costruzione locale per AMD64
+  # Backend API - Costruzione locale
   backend:
     build:
       context: ./backend
       dockerfile: ../devops/Dockerfile.backend
     container_name: mykeymanager-api
-    platform: linux/amd64
     environment:
       # Database Configuration
       DATABASE_URL: postgresql://mykeymanager:MyKey2024!Secure@database:5432/mykeymanager
@@ -73,13 +71,12 @@ services:
     networks:
       - mykeymanager
 
-  # Frontend Web - Costruzione locale per AMD64
+  # Frontend Web - Costruzione locale
   frontend:
     build:
       context: ./frontend
       dockerfile: ../devops/Dockerfile.frontend
     container_name: mykeymanager-web
-    platform: linux/amd64
     environment:
       VITE_API_URL: http://YOUR_SERVER_IP:8001
     ports:
