@@ -31,12 +31,29 @@ def use_license(license_id: int, req: schemas.LicenseUseRequest, db: Session = D
     lic = db.query(models.License).filter(models.License.id == license_id).first()
     if not lic:
         raise HTTPException(status_code=404, detail="License not found")
+    
+    # Aggiorna timestamp utilizzo
     lic.last_used_at = datetime.utcnow()
     db.commit()
     db.refresh(lic)
     
-    # Invia email con le informazioni dell'utente
-    email_utils.send_license_email(lic.license_key, lic.iso_url, user)
+    # Prepara i dati per l'email (opzionale)
+    try:
+        license_data = {
+            'product_name': lic.product_name,
+            'version': lic.version or 'N/A',
+            'vendor': lic.vendor or 'N/A', 
+            'category_name': lic.category.name if lic.category else 'N/A',
+            'iso_download': req.iso_download if req else False
+        }
+        
+        # Invia email solo se configurata (non blocca se fallisce)
+        email_utils.send_license_email(license_data, user)
+    except Exception as e:
+        # Log dell'errore ma continua l'operazione
+        print(f"Avviso: impossibile inviare email notifica: {e}")
+        # Non sollevare eccezione per non bloccare l'uso della licenza
+    
     return lic
 
 @router.put('/{license_id}', response_model=schemas.LicenseRead)
